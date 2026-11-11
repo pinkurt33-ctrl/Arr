@@ -15,26 +15,16 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - name: Place files
-        run: |
-          A=github/workflows/app/src/main
-          mkdir -p $A/assets $A/java/com/pinku/webanimator
-          test -f MainActivity.java || { echo "ERROR: root me MainActivity.java nahi hai"; exit 1; }
-          cp MainActivity.java $A/java/com/pinku/webanimator/MainActivity.java
-          if [ ! -f $A/assets/animator.js ]; then
-            F=$(find . -name animator.js -not -path "*/build/*" -not -path "./.git/*" | head -n1)
-            cp "$F" $A/assets/animator.js
-          fi
-          ls -l $A/java/com/pinku/webanimator $A/assets
+      - name: Show files
+        run: find . -path ./.git -prune -o -type f \( -name "*.java" -o -name "*.js" -o -name "*.gradle" -o -name "AndroidManifest.xml" \) -print
       - name: Build debug APK
         run: gradle assembleDebug
       - name: Check APK contents
         run: |
-          APK=github/workflows/app/build/outputs/apk/debug/app-debug.apk
-          unzip -l $APK | grep "assets/animator.js"
-          unzip -p $APK classes.dex > /tmp/classes.dex
-          grep -a -q "com/pinku/webanimator/MainActivity" /tmp/classes.dex && echo "ALL OK"
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep "assets/animator.js"
+          unzip -p app/build/outputs/apk/debug/app-debug.apk classes.dex > /tmp/c.dex
+          grep -a -q "com/pinku/webanimator/MainActivity" /tmp/c.dex && echo "ALL OK"
       - uses: actions/upload-artifact@v4
         with:
           name: WebAnimator-APK
-          path: github/workflows/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
