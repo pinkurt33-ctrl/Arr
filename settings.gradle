@@ -1,8 +1,10 @@
 pluginManagement {
     repositories { google(); mavenCentral(); gradlePluginPortal() }
+    plugins { id 'com.android.application' version '8.5.2' }
 }
 dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = 'WebAnimator'
 include ':app'
+project(':app').projectDir = new File(settingsDir, 'github/workflows/app')
