@@ -15,16 +15,34 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - name: Show files
-        run: find . -path ./.git -prune -o -type f \( -name "*.java" -o -name "*.js" -o -name "*.gradle" -o -name "AndroidManifest.xml" \) -print
+      - name: Assemble clean project
+        run: |
+          P=$PWD/clean
+          M=$(find . -name MainActivity.java -size +3k -not -path "./clean/*" -not -path "./.git/*" | head -n1)
+          J=$(find . -name animator.js -size +3k -not -path "./clean/*" -not -path "./.git/*" | head -n1)
+          echo "MainActivity found: $M"
+          echo "animator.js found: $J"
+          if [ -z "$M" ] || [ -z "$J" ]; then echo "ERROR: file missing or empty"; exit 1; fi
+          grep -q "class MainActivity" "$M" || { echo "ERROR: MainActivity.java me class nahi hai"; exit 1; }
+          mkdir -p $P/app/src/main/java/com/pinku/webanimator $P/app/src/main/assets
+          cp "$M" $P/app/src/main/java/com/pinku/webanimator/MainActivity.java
+          cp "$J" $P/app/src/main/assets/animator.js
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n<uses-permission android:name="android.permission.INTERNET" />\n<application android:label="Web Animator" android:usesCleartextTraffic="true" android:theme="@android:style/Theme.Material.NoActionBar">\n<activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize" android:configChanges="orientation|screenSize|keyboardHidden">\n<intent-filter>\n<action android:name="android.intent.action.MAIN" />\n<category android:name="android.intent.category.LAUNCHER" />\n</intent-filter>\n</activity>\n</application>\n</manifest>\n' > $P/app/src/main/AndroidManifest.xml
+          printf "pluginManagement {\n repositories { google(); mavenCentral(); gradlePluginPortal() }\n}\ndependencyResolutionManagement {\n repositories { google(); mavenCentral() }\n}\nrootProject.name = 'WebAnimator'\ninclude ':app'\n" > $P/settings.gradle
+          printf "plugins {\n id 'com.android.application' version '8.5.2' apply false\n}\n" > $P/build.gradle
+          printf "plugins {\n id 'com.android.application'\n}\nandroid {\n namespace 'com.pinku.webanimator'\n compileSdk 34\n defaultConfig {\n applicationId 'com.pinku.webanimator'\n minSdk 24\n targetSdk 34\n versionCode 1\n versionName '1.0'\n }\n}\n" > $P/app/build.gradle
+          printf "org.gradle.jvmargs=-Xmx2g\nandroid.useAndroidX=false\n" > $P/gradle.properties
+          wc -c $P/app/src/main/java/com/pinku/webanimator/MainActivity.java $P/app/src/main/assets/animator.js
       - name: Build debug APK
+        working-directory: clean
         run: gradle assembleDebug
       - name: Check APK contents
         run: |
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep "assets/animator.js"
-          unzip -p app/build/outputs/apk/debug/app-debug.apk classes.dex > /tmp/c.dex
+          APK=clean/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l $APK | grep "assets/animator.js"
+          unzip -p $APK classes.dex > /tmp/c.dex
           grep -a -q "com/pinku/webanimator/MainActivity" /tmp/c.dex && echo "ALL OK"
       - uses: actions/upload-artifact@v4
         with:
           name: WebAnimator-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: clean/app/build/outputs/apk/debug/app-debug.apk
