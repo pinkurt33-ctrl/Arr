@@ -8,50 +8,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-
-      - name: Auto-fix file locations
+      - name: Place files
         run: |
           A=github/workflows/app/src/main
           mkdir -p $A/assets $A/java/com/pinku/webanimator
-          echo "=== MainActivity files found in repo ==="
-          find . -iname "MainActivity*" -not -path "*/build/*" -not -path "./.git/*" || true
-          echo "=== animator files found in repo ==="
-          find . -iname "animator*" -not -path "*/build/*" -not -path "./.git/*" || true
+          test -f MainActivity.java || { echo "ERROR: root me MainActivity.java nahi hai"; exit 1; }
+          cp MainActivity.java $A/java/com/pinku/webanimator/MainActivity.java
           if [ ! -f $A/assets/animator.js ]; then
-            F=$(find . -name "animator.js" -not -path "*/build/*" -not -path "./.git/*" | head -n1)
-            if [ -n "$F" ]; then cp "$F" $A/assets/animator.js; echo "Copied animator.js from $F"; fi
+            F=$(find . -name animator.js -not -path "*/build/*" -not -path "./.git/*" | head -n1)
+            cp "$F" $A/assets/animator.js
           fi
-          if [ ! -f $A/java/com/pinku/webanimator/MainActivity.java ]; then
-            F=$(find . -name "MainActivity.java" -not -path "*/build/*" -not -path "./.git/*" | head -n1)
-            if [ -n "$F" ]; then cp "$F" $A/java/com/pinku/webanimator/MainActivity.java; echo "Copied MainActivity.java from $F"; fi
-          fi
-          echo "=== final java file ==="
-          ls -l $A/java/com/pinku/webanimator/ || true
-          true
-
+          ls -l $A/java/com/pinku/webanimator $A/assets
       - name: Build debug APK
         run: gradle assembleDebug
-
       - name: Check APK contents
         run: |
           APK=github/workflows/app/build/outputs/apk/debug/app-debug.apk
-          unzip -l $APK | grep "assets/animator.js" || { echo "ERROR: animator.js MISSING in assets"; exit 1; }
+          unzip -l $APK | grep "assets/animator.js"
           unzip -p $APK classes.dex > /tmp/classes.dex
-          if grep -a -q "com/pinku/webanimator/MainActivity" /tmp/classes.dex; then
-            echo "ALL OK: MainActivity and animator.js are inside the APK"
-          else
-            echo "ERROR: MainActivity MISSING"; exit 1
-          fi
-
+          grep -a -q "com/pinku/webanimator/MainActivity" /tmp/classes.dex && echo "ALL OK"
       - uses: actions/upload-artifact@v4
         with:
           name: WebAnimator-APK
