@@ -159,4 +159,4 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
-}
+    }
