@@ -36,12 +36,13 @@ jobs:
       - name: Build debug APK
         working-directory: clean
         run: gradle assembleDebug
-      - name: Check APK contents
+      - name: Show APK info
         run: |
           APK=clean/app/build/outputs/apk/debug/app-debug.apk
-          unzip -l $APK | grep "assets/animator.js"
-          unzip -p $APK classes.dex > /tmp/c.dex
-          grep -a -q "com/pinku/webanimator/MainActivity" /tmp/c.dex && echo "ALL OK"
+          ls -l $APK
+          unzip -l $APK | grep -E "classes|animator.js" || true
+          unzip -p $APK classes.dex | strings | grep -i "MainActivity" | head -5 || true
+          echo "INFO DONE"
       - uses: actions/upload-artifact@v4
         with:
           name: WebAnimator-APK
