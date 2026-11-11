@@ -120,7 +120,6 @@ public class MainActivity extends Activity {
         web.loadUrl("https://www.google.com");
     }
 
-    // Core script defines window.__paStart once per page; calling it twice is harmless.
     private void inject() {
         String cfg = "{loader:" + sp.getBoolean("loader", true)
                 + ",sound:" + sp.getBoolean("sound", true)
@@ -160,4 +159,4 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
-                      }
+}
