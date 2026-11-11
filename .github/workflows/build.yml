@@ -15,6 +15,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
+      - name: Auto-fix file locations
+        run: |
+          A=github/workflows/app/src/main
+          mkdir -p $A/assets $A/java/com/pinku/webanimator
+          if [ ! -f $A/assets/animator.js ]; then
+            F=$(find . -name "animator.js" -not -path "*/build/*" -not -path "./.git/*" | head -n1)
+            if [ -n "$F" ]; then cp "$F" $A/assets/animator.js; echo "Copied animator.js from $F"; fi
+          fi
+          if [ ! -f $A/java/com/pinku/webanimator/MainActivity.java ]; then
+            F=$(find . -name "MainActivity.java" -not -path "*/build/*" -not -path "./.git/*" | head -n1)
+            if [ -n "$F" ]; then cp "$F" $A/java/com/pinku/webanimator/MainActivity.java; echo "Copied MainActivity.java from $F"; fi
+          fi
+          true
       - name: Build debug APK
         run: gradle assembleDebug
       - name: Check APK contents
